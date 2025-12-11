@@ -8,9 +8,12 @@ use Livewire\WithPagination;
 
 class Inquilinos extends Component
 {
-
     use WithPagination;
+
     protected $paginationTheme = 'tailwind';
+
+    // NECESARIO EN LIVEWIRE 3 SI SE MANEJA PAGINACIÓN
+    public $page = 1; 
 
     //campos del formulario de creacion
     public $nombres;
@@ -54,7 +57,12 @@ class Inquilinos extends Component
     //Resetear campos del formulario de edicion
     public function resetEditForm()
     {
-        $this->reset(['editNombres', 'editEmail', 'editTelefono', 'editFechaNacimiento', 'editDocumentoIdentidad', 'inquilinoEditando']);
+        $this->reset([
+            'editNombres', 'editEmail', 'editTelefono',
+            'editFechaNacimiento', 'editDocumentoIdentidad',
+            'inquilinoEditando'
+        ]);
+
         $this->resetErrorBag();
     }   
 
@@ -69,6 +77,7 @@ class Inquilinos extends Component
     public function save()
     {
         $this->validate();  
+
         Inquilino::create([
             'nombres' => $this->nombres,
             'email' => $this->email,
@@ -76,9 +85,13 @@ class Inquilinos extends Component
             'fecha_nacimiento' => $this->fecha_nacimiento,
             'documento_identidad' => $this->documento_identidad,
         ]); 
+
         $this->resetCreateForm();
         $this->createModal = false;
+
         session()->flash('message', 'Inquilino creado exitosamente');
+
+        $this->resetPage(); // resetear a página 1
     }
 
     //mostrar detalles del inquilino
@@ -88,10 +101,11 @@ class Inquilinos extends Component
         $this->showModal = true;
     }
 
-    //mostrar detalles del inquilino en el modal de edicion
+    //mostrar info para editar
     public function edit($id)
     {
         $this->inquilinoEditando = Inquilino::findOrFail($id);
+
         $this->editNombres = $this->inquilinoEditando->nombres;
         $this->editEmail = $this->inquilinoEditando->email;
         $this->editTelefono = $this->inquilinoEditando->telefono;
@@ -122,17 +136,18 @@ class Inquilinos extends Component
 
         $this->resetEditForm();
         $this->editModal = false;
+
         session()->flash('message', 'Inquilino actualizado exitosamente');
     }
 
-    //confirmar eliminación de inquilino
+    // Modal de confirmación
     public function confirmDelete($id)
     {
         $this->inquilinoEliminar = Inquilino::findOrFail($id);
         $this->deleteModal = true;
     }
 
-    //eliminar inquilino
+    //eliminar inquilino con paginación corregida
     public function delete()
     {
         $inquilino = Inquilino::findOrFail($this->inquilinoEliminar->id);
@@ -140,17 +155,17 @@ class Inquilinos extends Component
 
         $this->deleteModal = false;
         $this->inquilinoEliminar = null;
+
         session()->flash('message', 'Inquilino eliminado exitosamente');
 
-        $inquilinos = Inquilino::paginate(10);
-        if($inquilinos->isEmpty() && $this->page > 1) {
-            $this->previousPage();
-        }
+        // Livewire 3 hace el ajuste de la paginación correctamente
+        $this->resetPage();
     }
 
     public function render()
     {
-        $inquilinos = Inquilino::paginate(10);
-        return view('livewire.inquilinos',compact('inquilinos'));
+        $inquilinos = Inquilino::orderBy('id', 'DESC')->paginate(10);
+
+        return view('livewire.inquilinos', compact('inquilinos'));
     }
 }

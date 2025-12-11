@@ -30,3 +30,6 @@ Route::get('/propiedades', Propiedads::class)
     ->middleware(['auth']);
 
 require __DIR__.'/auth.php';
+
+
+Route::view('/offline', 'offline')->name('offline');
